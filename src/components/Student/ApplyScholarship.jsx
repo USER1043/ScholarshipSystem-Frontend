@@ -18,24 +18,41 @@ const ApplyScholarship = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const [files, setFiles] = useState({});
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e) => {
+    setFiles({ ...files, [e.target.name]: e.target.files[0] });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
     setError("");
+
+    const data = new FormData();
+    // Append text fields
+    Object.keys(formData).forEach((key) => data.append(key, formData[key]));
+    // Append files
+    if (files.incomeProof) data.append("incomeProof", files.incomeProof);
+    if (files.marksheet) data.append("marksheet", files.marksheet);
+    if (files.studentCertificate)
+      data.append("studentCertificate", files.studentCertificate);
+
     try {
-      await api.post("/applications", formData);
+      await api.post("/applications", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       setMessage("Application Submitted Successfully!");
-      // Redirect to status page after short delay
       setTimeout(() => navigate("/student/status"), 2000);
     } catch (err) {
+      // ... existing error handling ...
       if (!err.response) {
         setError("Unable to connect to server.");
       } else if (err.response.data.errors) {
-        // Handle express-validator array
         const errorUnique = err.response.data.errors
           .map((e) => e.msg)
           .join(", ");
@@ -52,6 +69,7 @@ const ApplyScholarship = () => {
       {message && <p style={{ color: "green" }}>{message}</p>}
       {error && <p style={{ color: "red" }}>{error}</p>}
       <form onSubmit={handleSubmit}>
+        {/* ... existing fields ... */}
         <div className="input-group">
           <label>Full Name</label>
           <input
@@ -95,12 +113,44 @@ const ApplyScholarship = () => {
           />
         </div>
 
+        {/* File Uploads Section */}
         <hr style={{ margin: "20px 0", border: "1px solid #eee" }} />
-        <h3>Academic Details (Merit)</h3>
+        <h3>Upload Documents</h3>
         <p style={{ fontSize: "0.8rem", color: "#666", marginBottom: "15px" }}>
-          Academic data is used to assess merit eligibility.
+          PDF or Image files only (Max 5MB)
         </p>
 
+        <div className="input-group">
+          <label>Income Proof</label>
+          <input
+            type="file"
+            name="incomeProof"
+            onChange={handleFileChange}
+            accept=".pdf,image/*"
+          />
+        </div>
+        <div className="input-group">
+          <label>Marksheet</label>
+          <input
+            type="file"
+            name="marksheet"
+            onChange={handleFileChange}
+            accept=".pdf,image/*"
+          />
+        </div>
+        <div className="input-group">
+          <label>Student Certificate</label>
+          <input
+            type="file"
+            name="studentCertificate"
+            onChange={handleFileChange}
+            accept=".pdf,image/*"
+          />
+        </div>
+
+        <hr style={{ margin: "20px 0", border: "1px solid #eee" }} />
+        <h3>Academic Details (Merit)</h3>
+        {/* ... existing academic fields ... */}
         <div className="input-group">
           <label>Institute Name</label>
           <input

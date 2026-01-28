@@ -22,6 +22,22 @@ const VerifyApplications = () => {
     fetchApplications();
   }, []);
 
+  const handleViewDocument = async (filename) => {
+    try {
+      const response = await api.get(`/applications/documents/${filename}`, {
+        responseType: "blob",
+      });
+      // Create a temporary URL with correct MIME type
+      const contentType = response.headers["content-type"] || "application/pdf";
+      const fileURL = window.URL.createObjectURL(
+        new Blob([response.data], { type: contentType }),
+      );
+      window.open(fileURL, "_blank");
+    } catch (err) {
+      alert("Failed to load document. You may not be authorized.");
+    }
+  };
+
   const handleVerify = async (id, status) => {
     try {
       const comment = comments[id] || "";
@@ -96,6 +112,93 @@ const VerifyApplications = () => {
                   </p>
                 </>
               )}
+              {/* Documents Section */}
+              <div
+                style={{
+                  marginTop: "10px",
+                  padding: "10px",
+                  background: "#e9ecef",
+                  borderRadius: "4px",
+                }}
+              >
+                <h4 style={{ margin: "0 0 5px 0" }}>Uploaded Documents</h4>
+                {app.documents ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "5px",
+                    }}
+                  >
+                    {app.documents.incomeProof ? (
+                      <button
+                        onClick={() =>
+                          handleViewDocument(app.documents.incomeProof)
+                        }
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#007bff",
+                          textDecoration: "underline",
+                          cursor: "pointer",
+                          padding: 0,
+                          textAlign: "left",
+                        }}
+                      >
+                        View Income Proof
+                      </button>
+                    ) : (
+                      <span>Income Proof: Not Uploaded</span>
+                    )}
+
+                    {app.documents.marksheet ? (
+                      <button
+                        onClick={() =>
+                          handleViewDocument(app.documents.marksheet)
+                        }
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#007bff",
+                          textDecoration: "underline",
+                          cursor: "pointer",
+                          padding: 0,
+                          textAlign: "left",
+                        }}
+                      >
+                        View Marksheet
+                      </button>
+                    ) : (
+                      <span>Marksheet: Not Uploaded</span>
+                    )}
+
+                    {app.documents.studentCertificate ? (
+                      <button
+                        onClick={() =>
+                          handleViewDocument(app.documents.studentCertificate)
+                        }
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#007bff",
+                          textDecoration: "underline",
+                          cursor: "pointer",
+                          padding: 0,
+                          textAlign: "left",
+                        }}
+                      >
+                        View Student Certificate
+                      </button>
+                    ) : (
+                      <span>Certificate: Not Uploaded</span>
+                    )}
+                  </div>
+                ) : (
+                  <p style={{ fontStyle: "italic", fontSize: "0.8rem" }}>
+                    No documents attached (Legacy Application)
+                  </p>
+                )}
+              </div>
             </div>
 
             {app.verificationStatus === "pending" && (
