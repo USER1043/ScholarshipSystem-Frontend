@@ -201,7 +201,7 @@ const VerifyApplications = () => {
               </div>
             </div>
 
-            {app.verificationStatus === "pending" && (
+            {app.status === "Submitted" && (
               <div style={{ marginTop: "1rem" }}>
                 <input
                   type="text"
@@ -214,16 +214,10 @@ const VerifyApplications = () => {
                 />
                 <div style={{ display: "flex", gap: "0.5rem" }}>
                   <button
-                    onClick={() => handleVerify(app._id, "verified")}
-                    style={{ backgroundColor: "green" }}
+                    onClick={() => handleVerify(app._id, "Verified")}
+                    style={{ backgroundColor: "#007bff" }}
                   >
-                    Verify
-                  </button>
-                  <button
-                    onClick={() => handleVerify(app._id, "rejected")}
-                    style={{ backgroundColor: "red" }}
-                  >
-                    Reject
+                    Mark as Verified
                   </button>
                 </div>
               </div>

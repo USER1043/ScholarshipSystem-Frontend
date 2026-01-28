@@ -66,8 +66,6 @@ const ApplyScholarship = () => {
   return (
     <div className="card" style={{ maxWidth: "600px" }}>
       <h1>Apply for Scholarship</h1>
-      {message && <p style={{ color: "green" }}>{message}</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
       <form onSubmit={handleSubmit}>
         {/* ... existing fields ... */}
         <div className="input-group">
@@ -201,6 +199,10 @@ const ApplyScholarship = () => {
           />
         </div>
         <button type="submit">Submit Application</button>
+        {message && (
+          <p style={{ color: "green", marginTop: "1rem" }}>{message}</p>
+        )}
+        {error && <p style={{ color: "red", marginTop: "1rem" }}>{error}</p>}
       </form>
     </div>
   );

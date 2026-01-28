@@ -79,10 +79,55 @@ const ApplicationStatus = () => {
             >
               <h3>Application ID: {app._id}</h3>
               <p>
-                <strong>Status:</strong> {app.status}
+                <strong>Status:</strong>{" "}
+                <span
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    backgroundColor:
+                      app.status === "Approved"
+                        ? "#d4edda"
+                        : app.status === "Rejected"
+                          ? "#f8d7da"
+                          : app.status === "Verified"
+                            ? "#cce5ff"
+                            : "#f8f9fa",
+                    color:
+                      app.status === "Approved"
+                        ? "#155724"
+                        : app.status === "Rejected"
+                          ? "#721c24"
+                          : app.status === "Verified"
+                            ? "#004085"
+                            : "#333",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {app.status ? app.status.toUpperCase() : "SUBMITTED"}
+                </span>
               </p>
+
+              {app.status === "Rejected" && (
+                <div
+                  style={{
+                    marginTop: "10px",
+                    padding: "10px",
+                    background: "#f8d7da",
+                    border: "1px solid #f5c6cb",
+                    color: "#721c24",
+                    borderRadius: "4px",
+                  }}
+                >
+                  <strong>❌ Application Rejected</strong>
+                  <p style={{ margin: "5px 0 0 0" }}>
+                    Reason: {app.rejectionReason}
+                  </p>
+                </div>
+              )}
+
               <p>
-                <strong>Verification Status:</strong> {app.verificationStatus}
+                <strong>Verification Status:</strong>{" "}
+                {app.verificationStatus || "N/A"}
               </p>
               {app.verifierComments && (
                 <p>

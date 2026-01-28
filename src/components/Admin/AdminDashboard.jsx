@@ -7,6 +7,13 @@ const AdminDashboard = () => {
   const [error, setError] = useState("");
   const [approvalData, setApprovalData] = useState(null); // To show QR code after approval
 
+  // Rejection Modal State
+  const [rejectionModal, setRejectionModal] = useState({
+    isOpen: false,
+    appId: null,
+    reason: "",
+  });
+
   const fetchApplications = async () => {
     try {
       const res = await api.get("/admin/applications");
@@ -29,6 +36,23 @@ const AdminDashboard = () => {
       fetchApplications(); // Refresh list
     } catch (err) {
       alert(err.response?.data?.message || "Approval failed");
+    }
+  };
+
+  const handleRejectClick = (id) => {
+    setRejectionModal({ isOpen: true, appId: id, reason: "" });
+  };
+
+  const handleRejectSubmit = async () => {
+    try {
+      await api.post(`/admin/reject/${rejectionModal.appId}`, {
+        reason: rejectionModal.reason,
+      });
+      alert("Application Rejected");
+      setRejectionModal({ isOpen: false, appId: null, reason: "" });
+      fetchApplications();
+    } catch (err) {
+      alert(err.response?.data?.message || "Rejection failed");
     }
   };
 
@@ -75,6 +99,69 @@ const AdminDashboard = () => {
   return (
     <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
       <h1>Admin Dashboard</h1>
+
+      {/* Rejection Modal */}
+      {rejectionModal.isOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: "20px",
+              borderRadius: "8px",
+              minWidth: "400px",
+            }}
+          >
+            <h3>Reject Application</h3>
+            <textarea
+              value={rejectionModal.reason}
+              onChange={(e) =>
+                setRejectionModal({ ...rejectionModal, reason: e.target.value })
+              }
+              placeholder="Reason for rejection..."
+              style={{
+                width: "100%",
+                height: "100px",
+                marginBottom: "10px",
+                padding: "10px",
+              }}
+            />
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <button
+                onClick={() =>
+                  setRejectionModal({ isOpen: false, appId: null, reason: "" })
+                }
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRejectSubmit}
+                style={{ backgroundColor: "red", color: "white" }}
+              >
+                Confirm Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabs Navigation */}
       <div
@@ -237,16 +324,14 @@ const AdminDashboard = () => {
           <div
             style={{ display: "flex", flexDirection: "column", gap: "2rem" }}
           >
-            {/* Section 1: Ready for Approval */}
+            {/* Section 1: Ready for Approval/Rejection (Verified or Submitted) */}
             <div>
-              <h2 style={{ color: "#646cff" }}>Ready for Approval</h2>
+              <h2 style={{ color: "#646cff" }}>Ready for Review</h2>
               {applications.filter(
-                (app) =>
-                  app.verificationStatus === "verified" &&
-                  app.status !== "approved",
+                (app) => app.status !== "Approved" && app.status !== "Rejected",
               ).length === 0 ? (
                 <p style={{ fontStyle: "italic", color: "#666" }}>
-                  No applications currently waiting for approval.
+                  No applications currently waiting for review.
                 </p>
               ) : (
                 <div
@@ -260,14 +345,14 @@ const AdminDashboard = () => {
                   {applications
                     .filter(
                       (app) =>
-                        app.verificationStatus === "verified" &&
-                        app.status !== "approved",
+                        app.status !== "Approved" && app.status !== "Rejected",
                     )
                     .map((app) => (
                       <ApplicationCard
                         key={app._id}
                         app={app}
                         handleApprove={handleApprove}
+                        handleRejectClick={handleRejectClick}
                       />
                     ))}
                 </div>
@@ -276,32 +361,43 @@ const AdminDashboard = () => {
 
             <hr style={{ opacity: 0.1 }} />
 
-            {/* Section 2: Approved History & Others */}
+            {/* Section 2: History (Approved/Rejected) */}
             <div>
               <h2>Application History & Status</h2>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                  gap: "1rem",
-                }}
-              >
-                {applications
-                  .filter(
-                    (app) =>
-                      !(
-                        app.verificationStatus === "verified" &&
-                        app.status !== "approved"
-                      ),
-                  )
-                  .map((app) => (
-                    <ApplicationCard
-                      key={app._id}
-                      app={app}
-                      handleApprove={handleApprove}
-                    />
-                  ))}
-              </div>
+              {applications.length === 0 ? (
+                <p
+                  style={{
+                    fontStyle: "italic",
+                    color: "#666",
+                    textAlign: "center",
+                  }}
+                >
+                  No applications currently waiting for review.
+                </p>
+              ) : (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(300px, 1fr))",
+                    gap: "1rem",
+                  }}
+                >
+                  {applications
+                    .filter(
+                      (app) =>
+                        app.status === "Approved" || app.status === "Rejected",
+                    )
+                    .map((app) => (
+                      <ApplicationCard
+                        key={app._id}
+                        app={app}
+                        handleApprove={handleApprove}
+                        handleRejectClick={handleRejectClick}
+                      />
+                    ))}
+                </div>
+              )}
             </div>
           </div>
         </>
@@ -311,93 +407,129 @@ const AdminDashboard = () => {
 };
 
 // Helper Component to reduce duplication
-const ApplicationCard = ({ app, handleApprove }) => (
-  <div
-    className="card"
-    style={{
-      maxWidth: "100%",
-      opacity: app.status === "approved" ? 0.7 : 1,
-      borderLeft:
-        app.verificationStatus === "verified"
-          ? "5px solid #646cff"
-          : "1px solid #ccc",
-    }}
-  >
+const ApplicationCard = ({ app, handleApprove, handleRejectClick }) => {
+  let statusColor = "#f8f9fa";
+  let statusTextColor = "#333";
+
+  if (app.status === "Approved") {
+    statusColor = "#d4edda";
+    statusTextColor = "#155724";
+  } else if (app.status === "Rejected") {
+    statusColor = "#f8d7da";
+    statusTextColor = "#721c24";
+  } else if (app.status === "Verified") {
+    statusColor = "#cce5ff";
+    statusTextColor = "#004085";
+  }
+
+  return (
     <div
+      className="card"
       style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
+        maxWidth: "100%",
+        opacity:
+          app.status === "Approved" || app.status === "Rejected" ? 0.7 : 1,
+        borderLeft:
+          app.status === "Verified"
+            ? "5px solid #646cff"
+            : app.status === "Rejected"
+              ? "5px solid red"
+              : "1px solid #ccc",
       }}
     >
-      <h3>Student: {app.student?.username || "Unknown"}</h3>
-      <span
+      <div
         style={{
-          padding: "4px 8px",
-          borderRadius: "4px",
-          fontSize: "0.8rem",
-          backgroundColor: app.status === "approved" ? "#d4edda" : "#f8f9fa",
-          color: app.status === "approved" ? "#155724" : "#333",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        {app.status.toUpperCase()}
-      </span>
-    </div>
+        <h3>Student: {app.student?.username || "Unknown"}</h3>
+        <span
+          style={{
+            padding: "4px 8px",
+            borderRadius: "4px",
+            fontSize: "0.8rem",
+            backgroundColor: statusColor,
+            color: statusTextColor,
+            fontWeight: "bold",
+          }}
+        >
+          {app.status.toUpperCase()}
+        </span>
+      </div>
 
-    <p>
-      <strong>Verification:</strong> {app.verificationStatus}
-    </p>
-    {app.verifierComments && (
-      <p>
-        <strong>Verifier Comments:</strong> {app.verifierComments}
-      </p>
-    )}
-
-    <hr style={{ margin: "10px 0" }} />
-
-    <p>
-      <strong>Full Name:</strong> {app.fullName}
-    </p>
-    <p>
-      <strong>Income:</strong> {app.incomeDetails}
-    </p>
-
-    <div
-      style={{
-        marginTop: "10px",
-        padding: "10px",
-        background: "#f5f5f5",
-        borderRadius: "4px",
-      }}
-    >
-      <h4 style={{ margin: "0 0 5px 0" }}>Academic Details</h4>
-      <p>
-        <strong>Institute:</strong> {app.instituteName}
-      </p>
-      {app.academicDetails && (
-        <>
-          <p>
-            <strong>GPA:</strong> {app.academicDetails.currentGPA}/10
-          </p>
-          <p>
-            <strong>Exam:</strong> {app.examType}
-          </p>
-          <p>
-            <strong>Score:</strong> {app.academicDetails.examScore}
-          </p>
-        </>
+      {app.verifierComments && (
+        <p>
+          <strong>Verifier Comments:</strong> {app.verifierComments}
+        </p>
       )}
-    </div>
 
-    {app.verificationStatus === "verified" && app.status !== "approved" && (
-      <button
-        onClick={() => handleApprove(app._id)}
-        style={{ backgroundColor: "#646cff", marginTop: "1rem", width: "100%" }}
+      {app.rejectionReason && (
+        <p style={{ color: "red" }}>
+          <strong>Rejection Reason:</strong> {app.rejectionReason}
+        </p>
+      )}
+
+      <hr style={{ margin: "10px 0" }} />
+
+      <p>
+        <strong>Full Name:</strong> {app.fullName}
+      </p>
+      <p>
+        <strong>Income:</strong> {app.incomeDetails}
+      </p>
+
+      <div
+        style={{
+          marginTop: "10px",
+          padding: "10px",
+          background: "#f5f5f5",
+          borderRadius: "4px",
+        }}
       >
-        Approve & Digitally Sign
-      </button>
-    )}
-  </div>
-);
+        <h4 style={{ margin: "0 0 5px 0" }}>Academic Details</h4>
+        <p>
+          <strong>Institute:</strong> {app.instituteName}
+        </p>
+        {app.academicDetails && (
+          <>
+            <p>
+              <strong>GPA:</strong> {app.academicDetails.currentGPA}/10
+            </p>
+            <p>
+              <strong>Exam:</strong> {app.examType}
+            </p>
+            <p>
+              <strong>Score:</strong> {app.academicDetails.examScore}
+            </p>
+          </>
+        )}
+      </div>
+
+      {/* Action Buttons */}
+      <div style={{ display: "flex", gap: "10px", marginTop: "1rem" }}>
+        {app.status === "Verified" && (
+          <button
+            onClick={() => handleApprove(app._id)}
+            style={{ backgroundColor: "#646cff", flex: 1 }}
+          >
+            Approve
+          </button>
+        )}
+
+        {/* Admin can reject if not already approved/rejected (i.e. Verified or Submitted) */}
+        {app.status !== "Approved" && app.status !== "Rejected" && (
+          <button
+            onClick={() => handleRejectClick(app._id)}
+            style={{ backgroundColor: "red", flex: 1 }}
+          >
+            Reject
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default AdminDashboard;
