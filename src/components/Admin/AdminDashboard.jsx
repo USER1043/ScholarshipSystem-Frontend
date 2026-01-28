@@ -13,6 +13,33 @@ const AdminDashboard = () => {
     appId: null,
     reason: "",
   });
+  const [users, setUsers] = useState([]);
+  const [activeTab, setActiveTab] = useState("approvals");
+
+  const fetchUsers = async () => {
+    try {
+      const res = await api.get("/admin/users");
+      setUsers(res.data);
+    } catch (err) {
+      console.error("Failed to fetch users", err);
+    }
+  };
+
+  const handleRemoveUser = async (id) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to remove this user? This action cannot be undone.",
+      )
+    )
+      return;
+    try {
+      await api.delete(`/admin/staff/${id}`); // Route is practically same
+      await fetchUsers(); // Refresh list
+      await fetchApplications(); // Refresh applications as they might be deleted
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to remove user");
+    }
+  };
 
   const fetchApplications = async () => {
     try {
@@ -27,7 +54,17 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchApplications();
+    fetchUsers();
   }, []);
+
+  // Poll user list when tab is active
+  useEffect(() => {
+    if (activeTab === "manage-users") {
+      fetchUsers();
+    } else if (activeTab === "approvals") {
+      fetchApplications();
+    }
+  }, [activeTab]);
 
   const handleApprove = async (id) => {
     try {
@@ -90,8 +127,6 @@ const AdminDashboard = () => {
       });
     }
   };
-
-  const [activeTab, setActiveTab] = useState("approvals");
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div style={{ color: "red" }}>{error}</div>;
@@ -191,97 +226,177 @@ const AdminDashboard = () => {
           Review Applications
         </button>
         <button
-          onClick={() => setActiveTab("manage-team")}
+          onClick={() => setActiveTab("manage-users")}
           style={{
             background: "none",
             border: "none",
             borderBottom:
-              activeTab === "manage-team"
+              activeTab === "manage-users"
                 ? "3px solid #646cff"
                 : "3px solid transparent",
-            color: activeTab === "manage-team" ? "#646cff" : "#666",
+            color: activeTab === "manage-users" ? "#646cff" : "#666",
             borderRadius: "0",
             padding: "10px 20px",
             cursor: "pointer",
-            fontWeight: activeTab === "manage-team" ? "bold" : "normal",
+            fontWeight: activeTab === "manage-users" ? "bold" : "normal",
           }}
         >
-          Manage Team
+          Manage Users
         </button>
       </div>
 
-      {/* Tab Content: Manage Team (Onboarding) */}
-      {activeTab === "manage-team" && (
-        <div
-          className="card"
-          style={{ marginBottom: "2rem", borderLeft: "4px solid #646cff" }}
-        >
-          <h2>Inviting New Employee</h2>
-          <form
-            onSubmit={handleOnboardSubmit}
-            style={{
-              display: "grid",
-              gap: "1rem",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              alignItems: "end",
-            }}
+      {/* Tab Content: Manage Users (Onboarding + List) */}
+      {activeTab === "manage-users" && (
+        <>
+          <div
+            className="card"
+            style={{ marginBottom: "2rem", borderLeft: "4px solid #646cff" }}
           >
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <label>Employee Name</label>
-              <input
-                name="username"
-                value={onboardData.username}
-                onChange={handleOnboardChange}
-                placeholder="John Doe"
-                required
-                style={{ padding: "8px" }}
-              />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <label>Email Address</label>
-              <input
-                name="email"
-                type="email"
-                value={onboardData.email}
-                onChange={handleOnboardChange}
-                placeholder="john@example.com"
-                required
-                style={{ padding: "8px" }}
-              />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <label>Role</label>
-              <select
-                name="role"
-                value={onboardData.role}
-                onChange={handleOnboardChange}
-                style={{ padding: "8px" }}
-              >
-                <option value="verifier">
-                  Verifier (Scholarship Reviewer)
-                </option>
-                <option value="admin">Administrator</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              disabled={onboardStatus.loading}
-              style={{ height: "40px" }}
+            <h2>Inviting New Employee</h2>
+            <form
+              onSubmit={handleOnboardSubmit}
+              style={{
+                display: "grid",
+                gap: "1rem",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                alignItems: "end",
+              }}
             >
-              {onboardStatus.loading ? "Sending Invite..." : "Send Invite"}
-            </button>
-          </form>
-          {onboardStatus.message && (
-            <p style={{ color: "green", marginTop: "10px" }}>
-              {onboardStatus.message}
-            </p>
-          )}
-          {onboardStatus.error && (
-            <p style={{ color: "red", marginTop: "10px" }}>
-              {onboardStatus.error}
-            </p>
-          )}
-        </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <label>Employee Name</label>
+                <input
+                  name="username"
+                  value={onboardData.username}
+                  onChange={handleOnboardChange}
+                  placeholder="John Doe"
+                  required
+                  style={{ padding: "8px" }}
+                />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <label>Email Address</label>
+                <input
+                  name="email"
+                  type="email"
+                  value={onboardData.email}
+                  onChange={handleOnboardChange}
+                  placeholder="john@example.com"
+                  required
+                  style={{ padding: "8px" }}
+                />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <label>Role</label>
+                <select
+                  name="role"
+                  value={onboardData.role}
+                  onChange={handleOnboardChange}
+                  style={{ padding: "8px" }}
+                >
+                  <option value="verifier">
+                    Verifier (Scholarship Reviewer)
+                  </option>
+                  <option value="admin">Administrator</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                disabled={onboardStatus.loading}
+                style={{ height: "40px" }}
+              >
+                {onboardStatus.loading ? "Sending Invite..." : "Send Invite"}
+              </button>
+            </form>
+            {onboardStatus.message && (
+              <p style={{ color: "green", marginTop: "10px" }}>
+                {onboardStatus.message}
+              </p>
+            )}
+            {onboardStatus.error && (
+              <p style={{ color: "red", marginTop: "10px" }}>
+                {onboardStatus.error}
+              </p>
+            )}
+          </div>
+
+          {/* User List */}
+          <div className="card" style={{ maxWidth: "100%" }}>
+            <h2>All Users (Staff & Students)</h2>
+            {console.log("User Data:", users)}
+            {users.length === 0 ? (
+              <p>No users found.</p>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr
+                    style={{
+                      borderBottom: "1px solid #ddd",
+                      textAlign: "left",
+                    }}
+                  >
+                    <th style={{ padding: "10px" }}>Name</th>
+                    <th style={{ padding: "10px" }}>Email</th>
+                    <th style={{ padding: "10px" }}>Role</th>
+                    <th style={{ padding: "10px" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((member) => (
+                    <tr
+                      key={member._id}
+                      style={{ borderBottom: "1px solid #eee" }}
+                    >
+                      <td style={{ padding: "10px" }}>{member.username}</td>
+                      <td style={{ padding: "10px" }}>{member.email}</td>
+                      <td style={{ padding: "10px" }}>
+                        <span
+                          style={{
+                            padding: "4px 8px",
+                            borderRadius: "4px",
+                            backgroundColor:
+                              member.role === "admin"
+                                ? "#e3f2fd"
+                                : member.role === "student"
+                                  ? "#fff3e0"
+                                  : "#f3e5f5",
+                            color:
+                              member.role === "admin"
+                                ? "#1565c0"
+                                : member.role === "student"
+                                  ? "#e65100"
+                                  : "#7b1fa2",
+                            fontSize: "0.8rem",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {member.role.toUpperCase()}
+                        </span>
+                      </td>
+                      <td style={{ padding: "10px" }}>
+                        {!member.isSuperAdmin && (
+                          <button
+                            onClick={() => handleRemoveUser(member._id)}
+                            style={{
+                              backgroundColor: "#ff5252",
+                              color: "white",
+                              padding: "5px 10px",
+                              fontSize: "0.8rem",
+                              border: "none",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>
       )}
 
       {/* Tab Content: Approvals */}
@@ -324,11 +439,14 @@ const AdminDashboard = () => {
           <div
             style={{ display: "flex", flexDirection: "column", gap: "2rem" }}
           >
-            {/* Section 1: Ready for Approval/Rejection (Verified or Submitted) */}
+            {/* Section 1: Ready for Review (Verified or Submitted AND Verified Account) */}
             <div>
               <h2 style={{ color: "#646cff" }}>Ready for Review</h2>
               {applications.filter(
-                (app) => app.status !== "Approved" && app.status !== "Rejected",
+                (app) =>
+                  app.status !== "Approved" &&
+                  app.status !== "Rejected" &&
+                  app.student?.accountStatus !== "pending_verification", // Exclude unverified
               ).length === 0 ? (
                 <p style={{ fontStyle: "italic", color: "#666" }}>
                   No applications currently waiting for review.
@@ -345,7 +463,9 @@ const AdminDashboard = () => {
                   {applications
                     .filter(
                       (app) =>
-                        app.status !== "Approved" && app.status !== "Rejected",
+                        app.status !== "Approved" &&
+                        app.status !== "Rejected" &&
+                        app.student?.accountStatus !== "pending_verification",
                     )
                     .map((app) => (
                       <ApplicationCard
@@ -361,7 +481,7 @@ const AdminDashboard = () => {
 
             <hr style={{ opacity: 0.1 }} />
 
-            {/* Section 2: History (Approved/Rejected) */}
+            {/* Section 2: History (Approved/Rejected/Pending Verification) */}
             <div>
               <h2>Application History & Status</h2>
               {applications.length === 0 ? (
@@ -386,7 +506,9 @@ const AdminDashboard = () => {
                   {applications
                     .filter(
                       (app) =>
-                        app.status === "Approved" || app.status === "Rejected",
+                        app.status === "Approved" ||
+                        app.status === "Rejected" ||
+                        app.student?.accountStatus === "pending_verification", // Include unverified here
                     )
                     .map((app) => (
                       <ApplicationCard
@@ -471,6 +593,25 @@ const ApplicationCard = ({ app, handleApprove, handleRejectClick }) => {
         </p>
       )}
 
+      {/* Show Verification Warning - Only for pending applications */}
+      {app.student?.accountStatus === "pending_verification" &&
+        app.status !== "Approved" &&
+        app.status !== "Rejected" && (
+          <div
+            style={{
+              backgroundColor: "#fff3cd",
+              color: "#856404",
+              padding: "10px",
+              borderRadius: "4px",
+              marginBottom: "10px",
+              border: "1px solid #ffeeba",
+            }}
+          >
+            <strong>⚠️ Unverified Applicant:</strong> This student has not
+            verified their email address.
+          </div>
+        )}
+
       <hr style={{ margin: "10px 0" }} />
 
       <p>
@@ -518,15 +659,17 @@ const ApplicationCard = ({ app, handleApprove, handleRejectClick }) => {
           </button>
         )}
 
-        {/* Admin can reject if not already approved/rejected (i.e. Verified or Submitted) */}
-        {app.status !== "Approved" && app.status !== "Rejected" && (
-          <button
-            onClick={() => handleRejectClick(app._id)}
-            style={{ backgroundColor: "red", flex: 1 }}
-          >
-            Reject
-          </button>
-        )}
+        {/* Admin can reject if not already approved/rejected AND not pending verification */}
+        {app.status !== "Approved" &&
+          app.status !== "Rejected" &&
+          app.student?.accountStatus !== "pending_verification" && (
+            <button
+              onClick={() => handleRejectClick(app._id)}
+              style={{ backgroundColor: "red", flex: 1 }}
+            >
+              Reject
+            </button>
+          )}
       </div>
     </div>
   );

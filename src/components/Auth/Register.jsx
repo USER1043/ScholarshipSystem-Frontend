@@ -21,8 +21,10 @@ const Register = () => {
     e.preventDefault();
     setError("");
     try {
-      await register(formData);
-      navigate("/login");
+      const data = await register(formData);
+      navigate("/verify-otp", {
+        state: { userId: data._id, email: data.email },
+      });
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     }
