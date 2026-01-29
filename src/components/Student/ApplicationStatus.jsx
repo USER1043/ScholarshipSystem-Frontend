@@ -160,7 +160,7 @@ const ApplicationStatus = () => {
               </ul>
 
               {/* Digital Signature Visibility */}
-              {app.status === "approved" && (
+              {app.status === "Approved" && (
                 <div
                   style={{
                     marginTop: "1rem",
@@ -214,6 +214,12 @@ const ApplicationStatus = () => {
                               {verificationResults[app._id].signatureId}
                             </small>
                           </p>
+                          {app.signedBy && (
+                            <p>
+                              <strong>Signed By:</strong>{" "}
+                              {app.signedBy.username} ({app.signedBy.email})
+                            </p>
+                          )}
                           <p>
                             <small>
                               Signed At:{" "}

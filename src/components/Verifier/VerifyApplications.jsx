@@ -74,8 +74,22 @@ const VerifyApplications = () => {
               <strong>Status:</strong> {app.status}
             </p>
             <p>
-              <strong>Verification:</strong> {app.verificationStatus}
+              <strong>Verification:</strong>{" "}
+              {app.status === "Submitted"
+                ? "Pending Review"
+                : app.status === "Verified"
+                  ? "Verified by Staff"
+                  : app.status === "Approved"
+                    ? "Approved by Admin"
+                    : app.status === "Rejected"
+                      ? "Rejected"
+                      : "Unknown"}
             </p>
+            {app.verifierComments && (
+              <p>
+                <strong>Comments:</strong> {app.verifierComments}
+              </p>
+            )}
             <hr />
             <p>
               <strong>Full Name:</strong> {app.fullName}
