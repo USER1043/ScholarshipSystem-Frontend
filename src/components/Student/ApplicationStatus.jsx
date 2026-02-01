@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../../api/api";
+import { decryptWithAES } from "../../utils/encryptionUtils";
 
 const ApplicationStatus = () => {
   const [applications, setApplications] = useState([]);
@@ -11,8 +12,68 @@ const ApplicationStatus = () => {
     const fetchApplications = async () => {
       try {
         const res = await api.get("/applications/my");
-        setApplications(res.data);
+
+        // Client-Side Decryption of Sensitive Data
+        const decryptedApps = res.data.map((app) => {
+          if (app.decryptedAesKey) {
+            try {
+              const key = app.decryptedAesKey;
+
+              // Decrypt Individual Fields
+              const bankDetails = decryptWithAES(
+                app.encryptedBankDetails.content,
+                app.encryptedBankDetails.iv,
+                key,
+              );
+              const idNumber = decryptWithAES(
+                app.encryptedIdNumber.content,
+                app.encryptedIdNumber.iv,
+                key,
+              );
+              const incomeDetails = decryptWithAES(
+                app.encryptedIncomeDetails.content,
+                app.encryptedIncomeDetails.iv,
+                key,
+              );
+
+              // Decrypt Academic Details (Stored as JSON)
+              const academicJson = decryptWithAES(
+                app.encryptedAcademicDetails.content,
+                app.encryptedAcademicDetails.iv,
+                key,
+              );
+              const academicDetails = JSON.parse(academicJson);
+
+              // Map back to flat structure for UI
+              return {
+                ...app,
+                bankDetails,
+                idNumber,
+                incomeDetails,
+                currentGPA: academicDetails.currentGPA,
+                examScore: academicDetails.examScore,
+              };
+            } catch (decryptionErr) {
+              console.error(
+                "Decryption failed for app",
+                app._id,
+                decryptionErr,
+              );
+              return {
+                ...app,
+                error: "Failed to decrypt data locally",
+                bankDetails: "Error",
+                idNumber: "Error",
+                incomeDetails: "Error",
+              };
+            }
+          }
+          return app;
+        });
+
+        setApplications(decryptedApps);
       } catch (err) {
+        console.error(err);
         setError("Failed to fetch applications");
       } finally {
         setLoading(false);

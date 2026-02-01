@@ -1,7 +1,13 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import api from "../../api/api";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
+import {
+  getPublicKey,
+  generateAESKey,
+  encryptWithAES,
+  encryptAESKeyWithRSA,
+} from "../../utils/encryptionUtils";
 
 const ApplyScholarship = () => {
   const navigate = useNavigate();
@@ -15,10 +21,24 @@ const ApplyScholarship = () => {
     examType: "JEE",
     examScore: "",
   });
+  const [serverPublicKey, setServerPublicKey] = useState(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   const [files, setFiles] = useState({});
+
+  useEffect(() => {
+    // Fetch Server Public Key on Mount
+    const fetchKey = async () => {
+      try {
+        const key = await getPublicKey();
+        setServerPublicKey(key);
+      } catch (err) {
+        setError("Secure connection failed. Unable to initialize encryption.");
+      }
+    };
+    fetchKey();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -33,23 +53,65 @@ const ApplyScholarship = () => {
     setMessage("");
     setError("");
 
-    const data = new FormData();
-    // Append text fields
-    Object.keys(formData).forEach((key) => data.append(key, formData[key]));
-    // Append files
-    if (files.incomeProof) data.append("incomeProof", files.incomeProof);
-    if (files.marksheet) data.append("marksheet", files.marksheet);
-    if (files.studentCertificate)
-      data.append("studentCertificate", files.studentCertificate);
+    if (!serverPublicKey) {
+      setError("Encryption key missing. Please refresh the page.");
+      return;
+    }
 
     try {
+      // 1. Generate Client-Side AES Key
+      const aesKey = generateAESKey();
+
+      // 2. Encrypt Sensitive Data
+      const encryptedBankDetails = encryptWithAES(formData.bankDetails, aesKey);
+      const encryptedIdNumber = encryptWithAES(formData.idNumber, aesKey);
+      const encryptedIncomeDetails = encryptWithAES(
+        formData.incomeDetails,
+        aesKey,
+      );
+
+      // Encrypt Academic Details (Grouped)
+      const academicData = JSON.stringify({
+        currentGPA: formData.currentGPA,
+        examScore: formData.examScore,
+      });
+      const encryptedAcademicDetails = encryptWithAES(academicData, aesKey);
+
+      // 3. Encrypt AES Key with Server Public Key
+      const encryptedAesKey = encryptAESKeyWithRSA(aesKey, serverPublicKey);
+
+      const data = new FormData();
+
+      // Append Encrypted Fields (as JSON strings because FormData handles text or files)
+      data.append("encryptedBankDetails", JSON.stringify(encryptedBankDetails));
+      data.append("encryptedIdNumber", JSON.stringify(encryptedIdNumber));
+      data.append(
+        "encryptedIncomeDetails",
+        JSON.stringify(encryptedIncomeDetails),
+      );
+      data.append(
+        "encryptedAcademicDetails",
+        JSON.stringify(encryptedAcademicDetails),
+      );
+      data.append("encryptedAesKey", encryptedAesKey);
+
+      // Append Non-Sensitive Data
+      data.append("instituteName", formData.instituteName);
+      data.append("examType", formData.examType);
+
+      // Append files
+      if (files.incomeProof) data.append("incomeProof", files.incomeProof);
+      if (files.marksheet) data.append("marksheet", files.marksheet);
+      if (files.studentCertificate)
+        data.append("studentCertificate", files.studentCertificate);
+
       await api.post("/applications", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setMessage("Application Submitted Successfully!");
+      setMessage("Application Submitted Successfully (Encrypted)!");
       setTimeout(() => navigate("/student/status"), 2000);
     } catch (err) {
-      // ... existing error handling ...
+      console.error(err);
       if (!err.response) {
         setError("Unable to connect to server.");
       } else if (err.response.data.errors) {
@@ -67,7 +129,7 @@ const ApplyScholarship = () => {
     <div className="card" style={{ maxWidth: "600px" }}>
       <h1>Apply for Scholarship</h1>
       <form onSubmit={handleSubmit}>
-        {/* ... existing fields ... */}
+        {/* Unchanged UI ... */}
         <div className="input-group">
           <label>Full Name</label>
           <input
@@ -148,7 +210,6 @@ const ApplyScholarship = () => {
 
         <hr style={{ margin: "20px 0", border: "1px solid #eee" }} />
         <h3>Academic Details (Merit)</h3>
-        {/* ... existing academic fields ... */}
         <div className="input-group">
           <label>Institute Name</label>
           <input
@@ -198,7 +259,9 @@ const ApplyScholarship = () => {
             required
           />
         </div>
-        <button type="submit">Submit Application</button>
+        <button type="submit" disabled={!serverPublicKey}>
+          {serverPublicKey ? "Submit Application" : "Initializing Security..."}
+        </button>
         {message && (
           <p style={{ color: "green", marginTop: "1rem" }}>{message}</p>
         )}
