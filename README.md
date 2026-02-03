@@ -1,16 +1,71 @@
-# React + Vite
+# SafeApply - Secure Scholarship System - Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend application for the SafeApply, built with [Vite](https://vitejs.dev/) and [React](https://react.dev/). It provides a secure and responsive user interface for students, verifiers, and administrators.
 
-Currently, two official plugins are available:
+The Backend code is at [Repo](https://github.com/USER1043/ScholarshipSystem-Backend)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Tech Stack
 
-## React Compiler
+- **Framework:** React 19
+- **Build Tool:** Vite
+- **Routing:** React Router DOM v7
+- **State/API:** Axios
+- **Security:** `node-forge` (Encryption), `jwt-decode` (Token parsing)
+- **Styling:** CSS (App.css, index.css)
+- **Linting:** ESLint
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Features
 
-## Expanding the ESLint configuration
+- **Secure Authentication:** JWT-based login for multiple roles (Student, Verifier, Admin).
+- **Scholarship Application:** interactive forms for submitting applications.
+- **Dashboard:** specialized dashboards for different user roles.
+- **Encryption:** client-side encryption support using `node-forge`.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Prerequisites
+
+- Node.js (v18+ recommended)
+- npm or yarn
+
+## Getting Started
+
+1.  **Navigate to the client directory:**
+
+    ```bash
+    cd client
+    ```
+
+2.  **Install dependencies:**
+
+    ```bash
+    npm install
+    ```
+
+3.  **Run the development server:**
+    ```bash
+    npm run dev
+    ```
+    The application will typically start at `http://localhost:5173`.
+
+## Scripts
+
+- `npm run dev`: Starts the development server.
+- `npm run build`: Builds the app for production.
+- `npm run preview`: Previews the production build locally.
+- `npm run lint`: Runs ESLint to check for code quality issues.
+
+## Project Structure
+
+```
+client/
+├── public/          # Static assets
+├── src/
+│   ├── api/         # API integration logic
+│   ├── assets/      # Images and styles
+│   ├── components/  # Reusable UI components
+│   ├── context/     # React Context for state management
+│   ├── utils/       # Utility functions
+│   ├── App.jsx      # Main application component
+│   └── main.jsx     # Entry point
+├── package.json     # Dependencies and scripts
+└── vite.config.js   # Vite configuration
+```
