@@ -62,18 +62,18 @@ const AdminDashboard = () => {
             // Allow failing gracefully if these keys are missing in partial legacy data
             const bankDetails = app.encryptedBankDetails
               ? decryptWithAES(
-                  app.encryptedBankDetails.content,
-                  app.encryptedBankDetails.iv,
-                  key,
-                )
+                app.encryptedBankDetails.content,
+                app.encryptedBankDetails.iv,
+                key,
+              )
               : "N/A";
 
             const idNumber = app.encryptedIdNumber
               ? decryptWithAES(
-                  app.encryptedIdNumber.content,
-                  app.encryptedIdNumber.iv,
-                  key,
-                )
+                app.encryptedIdNumber.content,
+                app.encryptedIdNumber.iv,
+                key,
+              )
               : "N/A";
 
             // Decrypt Academic Details
@@ -431,7 +431,7 @@ const AdminDashboard = () => {
                         </span>
                       </td>
                       <td style={{ padding: "10px" }}>
-                        {!member.isSuperAdmin && (
+                        {member.role !== "admin" && (
                           <button
                             onClick={() => handleRemoveUser(member._id)}
                             style={{
