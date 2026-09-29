@@ -4,6 +4,10 @@ This is the frontend application for the SafeApply, built with [Vite](https://vi
 
 The Backend code is at [Repo](https://github.com/USER1043/ScholarshipSystem-Backend)
 
+## Architecture
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for diagrams of the app structure, session handling, authentication screens and browser-side encryption.
+
 ## Tech Stack
 
 - **Framework:** React 19
@@ -16,31 +20,47 @@ The Backend code is at [Repo](https://github.com/USER1043/ScholarshipSystem-Back
 
 ## Features
 
-- **Secure Authentication:** JWT-based login for multiple roles (Student, Verifier, Admin).
+- **Secure Authentication:** JWT-based login for multiple roles (Student, Verifier, Admin), with email OTP (students) or authenticator app (staff) as the second factor.
 - **Scholarship Application:** interactive forms for submitting applications.
 - **Dashboard:** specialized dashboards for different user roles.
-- **Encryption:** client-side encryption support using `node-forge`.
+- **Encryption:** sensitive fields are encrypted in the browser with `node-forge` before submission (see below).
+
+## Encryption
+
+When a student submits an application, the browser:
+
+1. Generates a random AES-256-CBC key for the application.
+2. Encrypts the bank details, Aadhaar ID, income, GPA and exam score with that key.
+3. Encrypts the AES key with the server's RSA-4096 public key (OAEP, SHA-256), fetched from `/api/auth/public-key`.
+4. Sends only the ciphertext and the encrypted key.
+
+The browser never decrypts data. The backend decrypts applications on the server and returns only the fields each role is allowed to see, so AES keys are never sent to the client.
 
 ## Prerequisites
 
 - Node.js (v18+ recommended)
 - npm or yarn
+- The [backend server](https://github.com/USER1043/ScholarshipSystem-Backend) running
+
+## Environment Variables
+
+Create a `.env` file in the project root to point the app at the backend API:
+
+```env
+VITE_BASE_URL=http://localhost:5000/api
+```
+
+If `VITE_BASE_URL` is not set, the app uses `http://localhost:5000/api`.
 
 ## Getting Started
 
-1.  **Navigate to the client directory:**
-
-    ```bash
-    cd client
-    ```
-
-2.  **Install dependencies:**
+1.  **Install dependencies:**
 
     ```bash
     npm install
     ```
 
-3.  **Run the development server:**
+2.  **Run the development server:**
     ```bash
     npm run dev
     ```
@@ -56,14 +76,14 @@ The Backend code is at [Repo](https://github.com/USER1043/ScholarshipSystem-Back
 ## Project Structure
 
 ```
-client/
+ScholarshipSystem-Frontend/
 ├── public/          # Static assets
 ├── src/
 │   ├── api/         # API integration logic
 │   ├── assets/      # Images and styles
 │   ├── components/  # Reusable UI components
 │   ├── context/     # React Context for state management
-│   ├── utils/       # Utility functions
+│   ├── utils/       # Utility functions (encryption, role helpers)
 │   ├── App.jsx      # Main application component
 │   └── main.jsx     # Entry point
 ├── package.json     # Dependencies and scripts
