@@ -39,7 +39,7 @@ flowchart LR
     end
 
     DB[("MongoDB<br/>users, applications, documents")]
-    SMTP["Gmail SMTP<br/>(Nodemailer)"]
+    SMTP["Brevo<br/>transactional email API"]
 
     SPA -- "HTTPS + JWT<br/>ciphertext on submit" --> API
     Scanner -- "GET /api/applications/verify-qr/:id" --> API
