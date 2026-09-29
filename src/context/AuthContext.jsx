@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
-import api from "../api/api";
+import api, { setUnauthorizedHandler } from "../api/api";
 import { jwtDecode } from "jwt-decode";
 
 export const AuthContext = createContext();
@@ -7,6 +7,12 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -22,11 +28,17 @@ export const AuthProvider = ({ children }) => {
           const storedUser = JSON.parse(localStorage.getItem("user"));
           if (storedUser) setUser(storedUser);
         }
-      } catch (error) {
+      } catch {
         logout();
       }
     }
     setLoading(false);
+  }, []);
+
+  // Log out whenever the API rejects the session with a 401
+  useEffect(() => {
+    setUnauthorizedHandler(logout);
+    return () => setUnauthorizedHandler(null);
   }, []);
 
   const login = async (email, password, deviceId) => {
@@ -65,12 +77,6 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     const res = await api.post("/auth/register", userData);
     return res.data;
-  };
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
   };
 
   const resendOtp = async (userId) => {

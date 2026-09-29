@@ -21,6 +21,13 @@ api.interceptors.request.use(
     }
 );
 
+// Called when the server rejects the session (registered by AuthContext)
+let onUnauthorized = null;
+
+export const setUnauthorizedHandler = (handler) => {
+    onUnauthorized = handler;
+};
+
 // Add a response interceptor to handle token expiry or errors
 api.interceptors.response.use(
     (response) => response,
@@ -29,8 +36,8 @@ api.interceptors.response.use(
             // Token invalid or expired
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            // Redirect to login or dispatch logout action if possible
-            // window.location.href = '/'; 
+            // Reset the in-memory session; ProtectedRoute then redirects to /login
+            if (onUnauthorized) onUnauthorized();
         }
         return Promise.reject(error);
     }

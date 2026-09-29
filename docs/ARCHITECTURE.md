@@ -120,6 +120,8 @@ flowchart TD
         R1["Request interceptor:<br/>Authorization: Bearer token"] --> R2["Backend"]
         R2 --> R3{"Response 401?"}
         R3 -- yes --> R4["Remove token and user<br/>from localStorage"]
+        R4 --> R6["Call AuthContext logout()<br/>(registered via setUnauthorizedHandler)"]
+        R6 --> R7["user = null, so ProtectedRoute<br/>redirects to /login"]
         R3 -- no --> R5["Return response"]
     end
 ```
@@ -215,7 +217,6 @@ sequenceDiagram
 
 - **The JWT is stored in `localStorage`.** Any script running on the page can read it, so a cross-site scripting (XSS) bug would expose the session. React escapes rendered values by default, which reduces this risk.
 - **The server public key is fetched without authentication.** The site must be served over HTTPS; otherwise an attacker on the network could replace the key and read the data it wraps.
-- **The 401 interceptor clears stored data but not the in-memory session.** It removes `token` and `user` from `localStorage` but doesn't reset `AuthContext` or redirect, so protected screens stay visible (with failing API calls) until the page is reloaded, at which point the user is sent to `/login`.
 - **The "trust this device" option has no effect yet.** A `deviceId` is stored, but the backend doesn't use it to skip MFA.
 
 ## 8. Contributing
