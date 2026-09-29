@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../../api/api";
 
-import { decryptWithAES } from "../../utils/encryptionUtils";
-
 const VerifyApplications = () => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,55 +11,8 @@ const VerifyApplications = () => {
     try {
       const res = await api.get("/verifier/applications");
 
-      const decryptedApps = res.data.map((app) => {
-        if (app.decryptedAesKey) {
-          try {
-            const key = app.decryptedAesKey;
-
-            // Decrypt Fields
-            const bankDetails = decryptWithAES(
-              app.encryptedBankDetails.content,
-              app.encryptedBankDetails.iv,
-              key,
-            );
-            const idNumber = decryptWithAES(
-              app.encryptedIdNumber.content,
-              app.encryptedIdNumber.iv,
-              key,
-            );
-            const incomeDetails = decryptWithAES(
-              app.encryptedIncomeDetails.content,
-              app.encryptedIncomeDetails.iv,
-              key,
-            );
-
-            // Decrypt Academic Details
-            let academicDetails = null;
-            if (app.encryptedAcademicDetails) {
-              const academicJson = decryptWithAES(
-                app.encryptedAcademicDetails.content,
-                app.encryptedAcademicDetails.iv,
-                key,
-              );
-              academicDetails = JSON.parse(academicJson);
-            }
-
-            return {
-              ...app,
-              bankDetails,
-              idNumber,
-              incomeDetails,
-              academicDetails: academicDetails, // Ensure structure matches UI expectation
-            };
-          } catch (e) {
-            console.error("Decryption failed for app", app._id, e);
-            return { ...app, error: "Decryption Failed" };
-          }
-        }
-        return app;
-      });
-
-      setApplications(decryptedApps);
+      // Sensitive fields arrive already decrypted by the server
+      setApplications(res.data);
       setLoading(false);
     } catch (err) {
       setError("Failed to fetch applications");

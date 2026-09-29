@@ -104,27 +104,3 @@ export const encryptAESKeyWithRSA = (aesKeyHex, publicKeyPem) => {
 
   return forge.util.encode64(encrypted);
 };
-
-/**
- * Decrypt data using AES-256-CBC
- * @param {string} encryptedDataHex - Encrypted data in hex
- * @param {string} ivHex - Initialization vector in hex
- * @param {string} keyHex - AES key in hex
- * @returns {string} - Decrypted plaintext
- */
-export const decryptWithAES = (encryptedDataHex, ivHex, keyHex) => {
-  const key = forge.util.hexToBytes(keyHex);
-  const iv = forge.util.hexToBytes(ivHex);
-  const encrypted = forge.util.hexToBytes(encryptedDataHex);
-
-  const decipher = forge.cipher.createDecipher("AES-CBC", key);
-  decipher.start({ iv: iv });
-  decipher.update(forge.util.createBuffer(encrypted));
-  const result = decipher.finish();
-
-  if (result) {
-    return decipher.output.toString();
-  } else {
-    throw new Error("Decryption failed");
-  }
-};
