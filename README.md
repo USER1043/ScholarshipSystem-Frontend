@@ -8,6 +8,8 @@ The Backend code is at [Repo](https://github.com/USER1043/ScholarshipSystem-Back
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for diagrams of the app structure, session handling, authentication screens and browser-side encryption.
 
+New here? Start with the [Contributor Guide](docs/CONTRIBUTOR_GUIDE.md): local setup, a code tour, design decisions and trade-offs, known quirks, the lint baseline and a testing checklist.
+
 ## Tech Stack
 
 - **Framework:** React 19
