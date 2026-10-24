@@ -63,9 +63,12 @@ const ApplyScholarship = () => {
       const aesKey = generateAESKey();
 
       // 2. Encrypt Sensitive Data
-      const encryptedBankDetails = encryptWithAES(formData.bankDetails, aesKey);
-      const encryptedIdNumber = encryptWithAES(formData.idNumber, aesKey);
-      const encryptedIncomeDetails = encryptWithAES(
+      const encryptedBankDetails = await encryptWithAES(
+        formData.bankDetails,
+        aesKey,
+      );
+      const encryptedIdNumber = await encryptWithAES(formData.idNumber, aesKey);
+      const encryptedIncomeDetails = await encryptWithAES(
         formData.incomeDetails,
         aesKey,
       );
@@ -75,10 +78,16 @@ const ApplyScholarship = () => {
         currentGPA: formData.currentGPA,
         examScore: formData.examScore,
       });
-      const encryptedAcademicDetails = encryptWithAES(academicData, aesKey);
+      const encryptedAcademicDetails = await encryptWithAES(
+        academicData,
+        aesKey,
+      );
 
       // 3. Encrypt AES Key with Server Public Key
-      const encryptedAesKey = encryptAESKeyWithRSA(aesKey, serverPublicKey);
+      const encryptedAesKey = await encryptAESKeyWithRSA(
+        aesKey,
+        serverPublicKey,
+      );
 
       const data = new FormData();
 
