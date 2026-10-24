@@ -29,8 +29,8 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for diagrams of the app structu
 
 When a student submits an application, the browser:
 
-1. Generates a random AES-256-CBC key for the application.
-2. Encrypts the bank details, Aadhaar ID, income, GPA and exam score with that key.
+1. Generates a random AES-256 key for the application.
+2. Encrypts the bank details, Aadhaar ID, income, GPA and exam score with that key using AES-256-GCM, which also produces an authentication tag so any tampering is detected on decryption.
 3. Encrypts the AES key with the server's RSA-4096 public key (OAEP, SHA-256), fetched from `/api/auth/public-key`.
 4. Sends only the ciphertext and the encrypted key.
 

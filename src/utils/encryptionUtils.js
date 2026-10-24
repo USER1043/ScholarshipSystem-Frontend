@@ -50,31 +50,39 @@ export const generateAESKey = () => {
   return bytesToHex(key);
 };
 
+const GCM_IV_LENGTH = 12;
+const GCM_TAG_LENGTH = 16;
+
 /**
- * Encrypt data using AES-256-CBC (PKCS#7 padding, matching the server's aesUtil)
+ * Encrypt data using AES-256-GCM (authenticated, matching the server's aesUtil)
  * @param {string} data - Plain text data
  * @param {string} keyHex - Hex string of the AES key
- * @returns {Promise<object>} - { iv: string (hex), encryptedData: string (hex) }
+ * @returns {Promise<object>} - { iv, encryptedData, authTag } (all hex)
  */
 export const encryptWithAES = async (data, keyHex) => {
   const subtle = getSubtle();
-  const iv = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(GCM_IV_LENGTH));
   const key = await subtle.importKey(
     "raw",
     hexToBytes(keyHex),
-    { name: "AES-CBC" },
+    { name: "AES-GCM" },
     false,
     ["encrypt"],
   );
-  const encrypted = await subtle.encrypt(
-    { name: "AES-CBC", iv },
-    key,
-    new TextEncoder().encode(data),
+  const encrypted = new Uint8Array(
+    await subtle.encrypt(
+      { name: "AES-GCM", iv, tagLength: GCM_TAG_LENGTH * 8 },
+      key,
+      new TextEncoder().encode(data),
+    ),
   );
 
+  // Web Crypto appends the auth tag to the ciphertext; the server expects it separately
+  const tagStart = encrypted.length - GCM_TAG_LENGTH;
   return {
     iv: bytesToHex(iv),
-    encryptedData: bytesToHex(new Uint8Array(encrypted)),
+    encryptedData: bytesToHex(encrypted.slice(0, tagStart)),
+    authTag: bytesToHex(encrypted.slice(tagStart)),
   };
 };
 

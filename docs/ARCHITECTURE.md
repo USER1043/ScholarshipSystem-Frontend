@@ -175,7 +175,7 @@ sequenceDiagram
     AS->>EU: generateAESKey()
     EU-->>AS: random 32-byte key (hex)
     AS->>EU: encryptWithAES() for bank details,<br/>ID number, income, and { currentGPA, examScore } as JSON
-    EU-->>AS: { iv, encryptedData } per field<br/>(AES-256-CBC, random IV each)
+    EU-->>AS: { iv, encryptedData, authTag } per field<br/>(AES-256-GCM, random 12-byte IV each)
     AS->>EU: encryptAESKeyWithRSA(aesKey, publicKey)
     EU-->>AS: wrapped key (RSA-OAEP, SHA-256, base64)
     AS->>API: POST /api/applications (multipart/form-data)<br/>4 encrypted fields + wrapped key + instituteName,<br/>examType + incomeProof, marksheet, studentCertificate
