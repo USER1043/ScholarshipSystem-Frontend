@@ -14,7 +14,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for diagrams of the app structu
 - **Build Tool:** Vite
 - **Routing:** React Router DOM v7
 - **State/API:** Axios
-- **Security:** `node-forge` (Encryption), `jwt-decode` (Token parsing)
+- **Security:** Web Crypto API (Encryption, built into the browser), `jwt-decode` (Token parsing)
 - **Styling:** CSS (App.css, index.css)
 - **Linting:** ESLint
 
@@ -23,7 +23,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for diagrams of the app structu
 - **Secure Authentication:** JWT-based login for multiple roles (Student, Verifier, Admin), with email OTP (students) or authenticator app (staff) as the second factor.
 - **Scholarship Application:** interactive forms for submitting applications.
 - **Dashboard:** specialized dashboards for different user roles.
-- **Encryption:** sensitive fields are encrypted in the browser with `node-forge` before submission (see below).
+- **Encryption:** sensitive fields are encrypted in the browser with the Web Crypto API before submission (see below).
 
 ## Encryption
 
@@ -36,9 +36,11 @@ When a student submits an application, the browser:
 
 The browser never decrypts data. The backend decrypts applications on the server and returns only the fields each role is allowed to see, so AES keys are never sent to the client.
 
+Browsers only provide the Web Crypto API on secure origins, so the app must be served over HTTPS or from `localhost`. Opening the dev server over plain HTTP from another device (for example `http://192.168.x.x:5173`) makes submission fail.
+
 ## Prerequisites
 
-- Node.js (v18+ recommended)
+- Node.js 20.19+ or 22.12+ (required by Vite 8 and ESLint 10)
 - npm or yarn
 - The [backend server](https://github.com/USER1043/ScholarshipSystem-Backend) running
 
@@ -51,6 +53,8 @@ VITE_BASE_URL=http://localhost:5000/api
 ```
 
 If `VITE_BASE_URL` is not set, the app uses `http://localhost:5000/api`.
+
+`VITE_` variables are inlined into the build and visible to anyone who loads the app, so never put a secret in them. Restart the dev server after changing `.env`.
 
 ## Getting Started
 
@@ -65,6 +69,12 @@ If `VITE_BASE_URL` is not set, the app uses `http://localhost:5000/api`.
     npm run dev
     ```
     The application will typically start at `http://localhost:5173`.
+
+    **Keep it on port 5173.** The backend allows exactly one CORS origin, `FRONTEND_URL` (default `http://localhost:5173`). If Vite picks another port because 5173 is busy, every API call fails with a CORS error. Free the port or change `FRONTEND_URL` in the backend `.env`.
+
+## Contributing
+
+See [docs/ARCHITECTURE.md, section 9](docs/ARCHITECTURE.md#9-contributing) for how to try every role locally, the current lint baseline, a manual testing checklist and a pull request checklist.
 
 ## Scripts
 
